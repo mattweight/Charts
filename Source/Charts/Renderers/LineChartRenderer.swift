@@ -16,6 +16,10 @@ import CoreGraphics
     import UIKit
 #endif
 
+public enum GradientDirection {
+    case horizontal
+    case veritcal
+}
 
 open class LineChartRenderer: LineRadarRenderer
 {
@@ -444,7 +448,7 @@ open class LineChartRenderer: LineRadarRenderer
             if !firstPoint
             {
                 if dataSet.isDrawLineWithGradientEnabled {
-                    drawGradientLine(context: context, dataSet: dataSet, spline: path, matrix: valueToPixelMatrix)
+                    drawGradientLine(context: context, dataSet: dataSet, spline: path, matrix: valueToPixelMatrix, colorDirection: .horizontal)
                 } else {
                     context.beginPath()
                     context.addPath(path)
@@ -815,7 +819,7 @@ open class LineChartRenderer: LineRadarRenderer
         context.restoreGState()
     }
 
-    func drawGradientLine(context: CGContext, dataSet: LineChartDataSetProtocol, spline: CGPath, matrix: CGAffineTransform)
+    func drawGradientLine(context: CGContext, dataSet: LineChartDataSetProtocol, spline: CGPath, matrix: CGAffineTransform, colorDirection: GradientDirection = .horizontal)
     {
         guard let gradientPositions = dataSet.gradientPositions else
         {
@@ -834,12 +838,13 @@ open class LineChartRenderer: LineRadarRenderer
             return
         }
 
-        let gradientStart = CGPoint(x: 0, y: boundingBox.minY)
-        let gradientEnd = CGPoint(x: 0, y: boundingBox.maxY)
+        let gradientStart = colorDirection == .horizontal ? CGPoint(x: boundingBox.minX, y: 0) : CGPoint(x: 0, y: boundingBox.minY)
+        let gradientEnd = colorDirection == .horizontal ? CGPoint(x: boundingBox.maxX, y: 0) : CGPoint(x: 0, y: boundingBox.maxY)
         var gradientColorComponents: [CGFloat] = []
         var gradientLocations: [CGFloat] = []
 
-        for position in gradientPositions.reversed()
+        let gradPositions: [CGFloat] = colorDirection == .horizontal ? gradientPositions : gradientPositions.reversed()
+        for position in gradPositions
         {
             let location = CGPoint(x: boundingBox.minX, y: position)
                 .applying(matrix)
