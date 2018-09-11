@@ -399,6 +399,13 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let drawBorder = dataSet.barBorderWidth > 0
         let isSingleColor = dataSet.colors.count == 1
 
+        let gradientColorGroups: [[UIColor]] = [
+            [.orange, .blue, .black],
+            [.green, .purple, .black],
+            [.yellow, .cyan, .black],
+            [.white, .darkGray, .brown]
+        ]
+
         if isSingleColor
         {
             context.setFillColor(dataSet.color(atIndex: 0).cgColor)
@@ -415,13 +422,58 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             guard viewPortHandler.isInBoundsLeft(barRect.maxX) else { continue }
             guard viewPortHandler.isInBoundsRight(barRect.minX) else { break }
 
-            if !isSingleColor
+            let colorIndex = j > 0 ? j : 0
+            let colorGroup = gradientColorGroups[colorIndex % gradientColorGroups.count]
+            var gradientLocations: [CGFloat] = []
+            var gradientColorComponents: [CGFloat] = []
+
+            let gradientStart = barRect.origin
+            let bufferEndX = barRect.origin.x + barRect.width
+            let bufferEndY = barRect.origin.y + barRect.height
+            let gradientEnd = CGPoint(x: bufferEndX, y: bufferEndY)
+
+            let gradPositions = dataSet.gradientPositions ?? [0, 200, 400]
+            for position in gradPositions
             {
-                // Set the color for the currently drawn value. If the index is out of bounds, reuse colors.
-                context.setFillColor(dataSet.color(atIndex: j).cgColor)
+                let location = CGPoint(x: barRect.minX, y: position)
+                let normalizedLocation =
+                    (location.y - barRect.minY) / (barRect.maxY - barRect.minY)
+                switch normalizedLocation {
+                case ..<0:
+                    gradientLocations.append(0)
+                case 0..<1:
+                    gradientLocations.append(normalizedLocation)
+                case 1...:
+                    gradientLocations.append(1)
+                default:
+                    assertionFailure()
+                }
             }
 
-            context.fill(barRect)
+            for color in colorGroup.reversed()
+            {
+                guard let (r, g, b, a) = color.nsuirgba else {
+                    continue
+                }
+                gradientColorComponents += [r, g, b, a]
+            }
+
+            let baseColorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let gradient = CGGradient(
+                colorSpace: baseColorSpace,
+                colorComponents: &gradientColorComponents,
+                locations: &gradientLocations,
+                count: gradientLocations.count) else {
+                    return
+            }
+
+            context.saveGState()
+            defer { context.restoreGState() }
+
+            context.beginPath()
+            context.addRect(barRect)
+            context.clip()
+            context.drawLinearGradient(gradient, start: gradientStart, end: gradientEnd, options: [])
 
             if drawBorder
             {
