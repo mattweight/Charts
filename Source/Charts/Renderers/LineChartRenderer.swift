@@ -16,10 +16,7 @@ import CoreGraphics
     import UIKit
 #endif
 
-public enum GradientDirection {
-    case horizontal
-    case veritcal
-}
+public typealias GradientDirection = Legend.Orientation
 
 open class LineChartRenderer: LineRadarRenderer
 {
