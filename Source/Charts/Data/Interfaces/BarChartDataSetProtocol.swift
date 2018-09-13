@@ -24,7 +24,16 @@ public protocol BarChartDataSetProtocol: BarLineScatterCandleBubbleChartDataSetP
     
     /// - returns: The maximum number of bars that can be stacked upon another in this DataSet.
     var stackSize: Int { get }
-    
+
+    /// Render gradients for each buffer
+    var drawBarGradientsEnabled: Bool { get set }
+
+    /// The gradient arrays work like the colors array but in groups
+    var gradientColors: [[NSUIColor]]? { get set }
+
+    /// The positions for gradient blending
+    var gradientPositions: [CGFloat]? { get set }
+
     /// the color used for drawing the bar-shadows. The bar shadows is a surface behind the bar that indicates the maximum value
     var barShadowColor: NSUIColor { get set }
     

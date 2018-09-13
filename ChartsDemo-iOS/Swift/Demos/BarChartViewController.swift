@@ -128,6 +128,14 @@ class BarChartViewController: DemoBaseViewController {
             set1 = BarChartDataSet(values: yVals, label: "The year 2017")
             set1.colors = ChartColorTemplates.material()
             set1.drawValuesEnabled = false
+            set1.drawBarGradientsEnabled = true
+            set1.gradientColors = [
+                [.black, .red, .white],
+                [.green, .purple, .blue],
+                [.yellow, .cyan, .magenta],
+                [.lightGray, .orange, .red]
+            ]
+            set1.gradientPositions = [0, 200, 400]
             
             let data = BarChartData(dataSet: set1)
             data.setValueFont(UIFont(name: "HelveticaNeue-Light", size: 10)!)

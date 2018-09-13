@@ -246,10 +246,6 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         prepareBuffer(dataSet: dataSet, index: index)
         trans.rectValuesToPixel(&_buffers[index])
         
-        let borderWidth = dataSet.barBorderWidth
-        let borderColor = dataSet.barBorderColor
-        let drawBorder = borderWidth > 0.0
-        
         context.saveGState()
         defer { context.restoreGState() }
         
@@ -299,7 +295,128 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 context.fill(barRect)
             }
         }
-        
+
+        if dataSet.drawBarGradientsEnabled && dataSet.gradientColors?.isEmpty == false {
+            drawGradients(context: context, dataSet: dataSet, dateSetIndex: index, buffer: buffer)
+        }
+        else {
+            drawSolids(context: context, dataSet: dataSet, dateSetIndex: index, buffer: buffer)
+        }
+    }
+
+    private func drawGradients(context: CGContext,
+                               dataSet: BarChartDataSetProtocol,
+                               dateSetIndex: Int,
+                               buffer: BarChartRenderer.Buffer) {
+        guard let gradientColors = dataSet.gradientColors else {
+            assertionFailure("Must set `gradientColors` if `dataSet.drawBarGradientsEnabled` is set to true")
+            return
+        }
+        let gradientPositions = dataSet.gradientPositions ?? [0, 200, 400]
+        let borderWidth = dataSet.barBorderWidth
+        let borderColor = dataSet.barBorderColor
+        let drawBorder = borderWidth > 0.0
+        let isSingleColor = dataSet.colors.count == 1
+
+        if isSingleColor {
+            context.setFillColor(dataSet.color(atIndex: 0).cgColor)
+        }
+
+        // In case the chart is stacked, we need to accomodate individual bars within accessibilityOrdereredElements
+        let isStacked = dataSet.isStacked
+        let stackSize = isStacked ? dataSet.stackSize : 1
+
+        for j in buffer.indices {
+            let barRect = buffer[j]
+
+            guard viewPortHandler.isInBoundsLeft(barRect.maxX) else { continue }
+            guard viewPortHandler.isInBoundsRight(barRect.minX) else { break }
+
+            let colorIndex = j > 0 ? j : 0
+            let colorGroup = gradientColors[colorIndex % gradientColors.count]
+            var gradientLocations: [CGFloat] = []
+            var gradientColorComponents: [CGFloat] = []
+
+            let gradientStart = barRect.origin
+            let bufferEndX = barRect.origin.x + barRect.width
+            let bufferEndY = barRect.origin.y + barRect.height
+            let gradientEnd = CGPoint(x: bufferEndX, y: bufferEndY)
+
+            for position in gradientPositions
+            {
+                let location = CGPoint(x: barRect.minX, y: position)
+                let normalizedLocation =
+                    (location.y - barRect.minY) / (barRect.maxY - barRect.minY)
+                switch normalizedLocation {
+                case ..<0:
+                    gradientLocations.append(0)
+                case 0..<1:
+                    gradientLocations.append(normalizedLocation)
+                case 1...:
+                    gradientLocations.append(1)
+                default:
+                    assertionFailure()
+                }
+            }
+
+            for color in colorGroup.reversed()
+            {
+                guard let (r, g, b, a) = color.nsuirgba else {
+                    continue
+                }
+                gradientColorComponents += [r, g, b, a]
+            }
+
+            let baseColorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let gradient = CGGradient(
+                colorSpace: baseColorSpace,
+                colorComponents: &gradientColorComponents,
+                locations: &gradientLocations,
+                count: gradientLocations.count) else {
+                    return
+            }
+
+            context.saveGState()
+            defer { context.restoreGState() }
+
+            context.beginPath()
+            context.addRect(barRect)
+            context.clip()
+            context.drawLinearGradient(gradient, start: gradientStart, end: gradientEnd, options: [])
+
+            if drawBorder
+            {
+                context.setStrokeColor(dataSet.barBorderColor.cgColor)
+                context.setLineWidth(dataSet.barBorderWidth)
+                context.stroke(barRect)
+            }
+
+            // Create and append the corresponding accessibility element to accessibilityOrderedElements
+            if let chart = dataProvider as? BarChartView
+            {
+                let element = createAccessibleElement(withIndex: j,
+                                                      container: chart,
+                                                      dataSet: dataSet,
+                                                      dataSetIndex: dateSetIndex,
+                                                      stackSize: stackSize)
+                { (element) in
+                    element.accessibilityFrame = barRect
+                }
+
+                accessibilityOrderedElements[j/stackSize].append(element)
+            }
+        }
+    }
+
+    private func drawSolids(context: CGContext,
+                            dataSet: BarChartDataSetProtocol,
+                            dateSetIndex: Int,
+                            buffer: BarChartRenderer.Buffer) {
+
+        let borderWidth = dataSet.barBorderWidth
+        let borderColor = dataSet.barBorderColor
+        let drawBorder = borderWidth > 0.0
+
         let isSingleColor = dataSet.colors.count == 1
         
         if isSingleColor
@@ -339,7 +456,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 let element = createAccessibleElement(withIndex: j,
                                                       container: chart,
                                                       dataSet: dataSet,
-                                                      dataSetIndex: index,
+                                                      dataSetIndex: dateSetIndex,
                                                       stackSize: stackSize)
                 { (element) in
                     element.accessibilityFrame = barRect
