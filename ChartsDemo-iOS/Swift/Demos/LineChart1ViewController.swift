@@ -135,10 +135,10 @@ class LineChart1ViewController: DemoBaseViewController {
         if dataSet.isDrawLineWithGradientEnabled {
             dataSet.lineDashLengths = nil
             dataSet.highlightLineDashLengths = nil
-            dataSet.setColors(.green, .purple, .white)
+            dataSet.setColors(.black, .red, .white)
             dataSet.setCircleColor(.black)
             dataSet.gradientPositions = [0, 40, 100]
-            dataSet.lineWidth = 5
+            dataSet.lineWidth = 5  // wider lineWidth to see the gradient
             dataSet.circleRadius = 3
             dataSet.drawCircleHoleEnabled = false
             dataSet.valueFont = .systemFont(ofSize: 9)
