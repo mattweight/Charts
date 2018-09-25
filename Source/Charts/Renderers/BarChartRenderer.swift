@@ -557,9 +557,11 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                             else { continue }
                         
                         let val = e.y
-                        
+
                         if dataSet.isDrawValuesEnabled
                         {
+                            let yPos = dataSet.shouldAlignValueLabelsToAxis ? CGFloat(0.0) :
+                                (val > 0.0) ? (rect.origin.y + posOffset) : (rect.origin.y + rect.size.height + negOffset)
                             drawValue(
                                 context: context,
                                 value: formatter.stringForValue(
@@ -568,9 +570,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                                     dataSetIndex: dataSetIndex,
                                     viewPortHandler: viewPortHandler),
                                 xPos: x,
-                                yPos: val >= 0.0
-                                    ? (rect.origin.y + posOffset)
-                                    : (rect.origin.y + rect.size.height + negOffset),
+                                yPos: yPos,
                                 font: valueFont,
                                 align: .center,
                                 color: dataSet.valueTextColorAt(j),

@@ -114,6 +114,9 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, BarChartData
     /// The positions for gradient blending
     open var gradientPositions: [CGFloat]?
 
+    /// if set to true, align the bar value labels along the x-axis (not in-line with the bar)
+    open var shouldAlignValueLabelsToAxis = false
+
     /// the color used for drawing the bar-shadows. The bar shadows is a surface behind the bar that indicates the maximum value
     open var barShadowColor = NSUIColor(red: 215.0/255.0, green: 215.0/255.0, blue: 215.0/255.0, alpha: 1.0)
 

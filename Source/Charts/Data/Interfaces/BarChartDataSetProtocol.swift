@@ -45,7 +45,10 @@ public protocol BarChartDataSetProtocol: BarLineScatterCandleBubbleChartDataSetP
 
     /// the alpha value (transparency) that is used for drawing the highlight indicator bar. min = 0.0 (fully transparent), max = 1.0 (fully opaque)
     var highlightAlpha: CGFloat { get set }
-    
+
+    /// if set to true, align the bar value labels along the x-axis (not in-line with the bar)
+    var shouldAlignValueLabelsToAxis: Bool { get set }
+
     /// array of labels used to describe the different values of the stacked bars
     var stackLabels: [String] { get set }
 }
